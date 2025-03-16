@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Shopping Assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .search-container {
+            margin: 20px 0;
+        }
+        .search-container input {
+            width: 70%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .result-container {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: none;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .loading {
+            display: none;
+            margin: 10px 0;
+            color: #666;
+        }
+        .error {
+            color: #dc3545;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Shopping Assistant</h1>
+        <p>Tell me what you're looking to buy, and I'll help you find it!</p>
+        
+        <div class="search-container">
+            <input type="text" 
+                   id="searchInput" 
+                   placeholder="Example: I want to buy running shoes from Nike"
+                   required>
+            <button onclick="searchProduct()">Search</button>
+        </div>
+
+        <div id="loading" class="loading">
+            Searching for your product...
+        </div>
+
+        <div id="error" class="error"></div>
+
+        <div id="resultContainer" class="result-container">
+            <h3>Shopping Suggestion:</h3>
+            <p id="aiResponse"></p>
+            <div id="storeInfo" style="margin-top: 15px;">
+                <h4>Store Information:</h4>
+                <p id="storeDetails"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function searchProduct() {
+            const searchInput = document.getElementById('searchInput').value.trim();
+            if (!searchInput) {
+                showError('Please enter what you\'re looking to buy');
+                return;
+            }
+
+            showLoading(true);
+            hideError();
+            
+            try {
+                const response = await fetch('/search-product', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: searchInput })
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError(data.error);
+                    return;
+                }
+
+                displayResults(data);
+            } catch (error) {
+                showError('Failed to process your request. Please try again.');
+                console.error('Error:', error);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        function displayResults(data) {
+            const resultContainer = document.getElementById('resultContainer');
+            const aiResponse = document.getElementById('aiResponse');
+            const storeDetails = document.getElementById('storeDetails');
+            const storeLink = document.getElementById('storeLink');
+
+            aiResponse.textContent = data.response;
+
+            console.log(data);
+            
+            if (data.story) {
+                storeDetails.textContent = data.story;
+            } else {
+                storeDetails.textContent = 'No specific store found for your request.';
+            }
+
+            resultContainer.style.display = 'block';
+        }
+
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('resultContainer').style.display = show ? 'none' : 'block';
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            document.getElementById('resultContainer').style.display = 'none';
+        }
+
+        function hideError() {
+            document.getElementById('error').style.display = 'none';
+        }
+
+        // Add enter key support
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchProduct();
+            }
+        });
+    </script>
+</body>
+</html> 
