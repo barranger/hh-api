@@ -29,7 +29,7 @@ async function getProductUrl(storeUrl, productName) {
 
 // API endpoint to generate story
 app.post('/search-product', async (req, res) => {
-  // try {
+   try {
     const tools = [{
       type: "function",
       name: "get_store_url",
@@ -117,10 +117,10 @@ app.post('/search-product', async (req, res) => {
     res.json({
       story: response3.output_text
     });
-  // } catch (error) {
-  //   console.error('Error:', error.message);
-  //   res.status(500).json({ error: 'Failed to generate story' });
-  // }
+  } catch (error) {
+    console.error('Error:', error.message);
+    res.status(500).json({ error: 'Failed to generate story' });
+  }
 });
 
 // Start the server
