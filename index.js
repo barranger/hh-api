@@ -22,9 +22,14 @@ async function getStoreUrl(storeName) {
   return await findStoreUrl(storeName);
 }
 
+async function getProductUrl(storeUrl, productName) {
+  const { findProductUrl } = require('./hh-tools');
+  return await findProductUrl(storeUrl, productName);
+}
+
 // API endpoint to generate story
 app.post('/search-product', async (req, res) => {
-  try {
+  // try {
     const tools = [{
       type: "function",
       name: "get_store_url",
@@ -38,6 +43,20 @@ app.post('/search-product', async (req, res) => {
           additionalProperties: false
       },
       strict: true
+  }, {
+    type: "function",
+    name: "get_product_url",
+    description: "Return the url of the product",
+    parameters: {
+      type: "object",
+      properties: {
+        productName: { type: "string" },
+        storeUrl: { type: "string" },
+      },
+      required: ["productName", "storeUrl"],
+      additionalProperties: false
+    },
+    strict: true
   }];
 
 
@@ -55,13 +74,9 @@ app.post('/search-product', async (req, res) => {
     });
 
     const toolCall = response.output[0];
+    console.log('toolCall', toolCall);
     const args = JSON.parse(toolCall.arguments);
-
-    console.log(args);
-
     const result = await getStoreUrl(args.storeName);
-
-    console.log(result);
 
     input.push(toolCall); // append model's function call message
     input.push({                               // append result message
@@ -70,6 +85,8 @@ app.post('/search-product', async (req, res) => {
       output: result.toString()
     });
 
+    console.log('result', result);
+
     const response2 = await openai.responses.create({
       model: "gpt-4o",
       input,
@@ -77,14 +94,33 @@ app.post('/search-product', async (req, res) => {
       store: true,
     });
 
+    const toolCall2 = response2.output[0];
+    console.log('toolCall2', toolCall2);
+    const args2 = JSON.parse(toolCall2.arguments);
+    console.log('args2', args2);
+    const result2 = await getProductUrl(args2.storeUrl, args2.productName);
+
+    input.push(toolCall2); // append model's function call message
+    input.push({                               // append result message
+      type: "function_call_output",
+      call_id: toolCall2.call_id,
+      output: result2.toString()
+    });
+
+    const response3 = await openai.responses.create({
+      model: "gpt-4o",
+      input,
+      tools,
+      store: true,
+    });
 
     res.json({
-      story: response2.output_text
+      story: response3.output_text
     });
-  } catch (error) {
-    console.error('Error:', error.message);
-    res.status(500).json({ error: 'Failed to generate story' });
-  }
+  // } catch (error) {
+  //   console.error('Error:', error.message);
+  //   res.status(500).json({ error: 'Failed to generate story' });
+  // }
 });
 
 // Start the server
