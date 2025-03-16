@@ -68,7 +68,7 @@
         <div class="search-container">
             <input type="text" 
                    id="searchInput" 
-                   placeholder="Example: sunglasses from sunbray"
+                   placeholder="Example: black sunglasses from sunbray"
                    required>
             <button onclick="searchProduct()">Search</button>
         </div>
@@ -82,10 +82,7 @@
         <div id="resultContainer" class="result-container">
             <h3>Shopping Suggestion:</h3>
             <p id="aiResponse"></p>
-            <div id="storeInfo" style="margin-top: 15px;">
-                <h4>Store Information:</h4>
-                <p id="storeDetails"></p>
-            </div>
+            
         </div>
     </div>
 
@@ -131,15 +128,37 @@
             const storeDetails = document.getElementById('storeDetails');
             const storeLink = document.getElementById('storeLink');
 
-            aiResponse.textContent = data.response;
+            // Convert markdown to HTML
+            // First, escape any HTML to prevent XSS
+            const escapedText = data.story
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
 
-            console.log(data);
+            // Then convert markdown to HTML
+            const formattedText = escapedText
+                // Convert bold
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                // Convert italic
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                // Convert links
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+                // Convert line breaks
+                .replace(/\n/g, '<br>');
+
+            // Set the formatted HTML
+            aiResponse.innerHTML = formattedText;
             
-            if (data.story) {
-                storeDetails.textContent = data.story;
-            } else {
-                storeDetails.textContent = 'No specific store found for your request.';
-            }
+            // if (data.storeUrl) {
+            //     storeDetails.textContent = data.storeName ? 
+            //         `Found a matching store: ${data.storeName}` : 
+            //         'Found a matching store!';
+            //     storeLink.href = data.storeUrl;
+            //     storeLink.style.display = 'inline-block';
+            // } else {
+            //     storeDetails.textContent = 'No specific store found for your request.';
+            //     storeLink.style.display = 'none';
+            // }
 
             resultContainer.style.display = 'block';
         }
